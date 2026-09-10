@@ -34,7 +34,7 @@
     framing: 'splash',
     shuffle: true,
     avoidRepeats: true,
-    sound: true,
+    sound: false,
     grayscale: false,
     mirror: false,
     onePerChampion: false
@@ -676,7 +676,15 @@
       'opt-framing': function (el) { config.framing = el.value; },
       'opt-shuffle': function (el) { config.shuffle = el.checked; },
       'opt-norepeat': function (el) { config.avoidRepeats = el.checked; },
-      'opt-sound': function (el) { config.sound = el.checked; },
+      'opt-sound': function (el) {
+        config.sound = el.checked;
+        const note = $('sound-note') || { classList: { toggle: function () {} } };
+        if (!el.checked) { note.textContent = ''; return; }
+        // This handler runs inside the click, which is what lets audio start.
+        const ok = Session.testSound();
+        note.textContent = ok ? 'played a test chime' : 'audio blocked by this browser';
+        note.classList.toggle('is-warn', !ok);
+      },
       'opt-gray': function (el) { config.grayscale = el.checked; },
       'opt-mirror': function (el) { config.mirror = el.checked; },
       'opt-onechamp': function (el) { config.onePerChampion = el.checked; }

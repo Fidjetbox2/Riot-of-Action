@@ -459,6 +459,8 @@ select:disabled { cursor: not-allowed; }
           border-radius: 6px; cursor: pointer; font-size: 13px; }
 .toggle:hover { background: var(--panel-2); }
 .toggle input { accent-color: var(--gold); width: 14px; height: 14px; margin: 0; }
+.toggle-note { margin-left: auto; font-size: 11px; color: var(--teal); }
+.toggle-note.is-warn { color: var(--rose); }
 
 .preset-list { display: flex; flex-direction: column; gap: 6px; }
 .preset {

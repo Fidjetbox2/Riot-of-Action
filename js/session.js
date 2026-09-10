@@ -107,11 +107,45 @@ const Session = (function () {
 
   /* ── Sound ───────────────────────────────────────────────────────── */
 
+  /* Browsers refuse to start an AudioContext until the page has been
+     interacted with. Creating one lazily inside the timer tick meant it was
+     born suspended and stayed that way, so nothing ever played: currentTime
+     does not advance while suspended, so notes were also being scheduled into
+     the past. Instead the context is opened and unlocked from a real click
+     (starting a session, or ticking the sound box) and beep() simply declines
+     to schedule anything unless it is actually running. */
+  function unlockAudio() {
+    try {
+      if (!audioCtx) {
+        const Ctor = window.AudioContext || window.webkitAudioContext;
+        if (!Ctor) return false;
+        audioCtx = new Ctor();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      // A single silent sample is what satisfies the stricter policies.
+      const buf = audioCtx.createBuffer(1, 1, 22050);
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf;
+      src.connect(audioCtx.destination);
+      src.start(0);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function audioReady() {
+    return !!audioCtx && audioCtx.state === 'running';
+  }
+
   function beep(freq, ms, when) {
     if (!opts.sound) return;
+    if (!audioReady()) {
+      // Nudge it, and let the next beep be the one that lands.
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      return;
+    }
     try {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
       const t0 = audioCtx.currentTime + (when || 0);
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
@@ -399,6 +433,18 @@ const Session = (function () {
     document.body.classList.add('player-open');
     syncToolButtons();
 
+    // start() runs inside the Start button's click handler, so this counts
+    // as the user gesture that lets audio play.
+    if (config.sound) {
+      unlockAudio();
+      // Resuming is async, so check once it has had a chance to settle.
+      setTimeout(function () {
+        if (running && opts.sound && !audioReady()) {
+          flash('Sound is switched on but this browser is blocking it.');
+        }
+      }, 900);
+    }
+
     running = true;
     uiPinned = false;
     index = -1;
@@ -446,9 +492,38 @@ const Session = (function () {
     if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
   }
 
+  let flashTimer = null;
+
+  /* Say something when an action does not work. Silently doing nothing is
+     indistinguishable from a broken button. */
+  function flash(text, ms) {
+    const msg = document.getElementById('stage-msg');
+    if (!msg) return;
+    msg.textContent = text;
+    msg.hidden = false;
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(function () { msg.hidden = true; }, ms || 2800);
+  }
+
   function toggleFullscreen() {
-    if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
-    else document.documentElement.requestFullscreen().catch(function () {});
+    if (document.fullscreenElement) {
+      document.exitFullscreen()['catch'](function () {});
+      return;
+    }
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+    if (!req) {
+      flash('This browser has no fullscreen API. Try F11.');
+      return;
+    }
+    try {
+      const p = req.call(el);
+      if (p && p['catch']) {
+        p['catch'](function () { flash('The browser blocked fullscreen. Try F11 instead.'); });
+      }
+    } catch (e) {
+      flash('The browser blocked fullscreen. Try F11 instead.');
+    }
   }
 
   /* ── Wiring ──────────────────────────────────────────────────────── */
@@ -536,6 +611,15 @@ const Session = (function () {
   return {
     init: init,
     start: start,
+    testSound: function () {
+      // Called from the sound checkbox, which is itself a user gesture.
+      if (!unlockAudio()) return false;
+      const wasOn = opts.sound;
+      opts.sound = true;
+      chime();
+      opts.sound = wasOn;
+      return true;
+    },
     stop: stop,
     presets: CLASS_PRESETS,
     expandSchedule: expandSchedule,

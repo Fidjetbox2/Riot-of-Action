@@ -95,7 +95,12 @@ Four rhythms:
 - **Untimed**: move through images yourself, for long studies.
 
 Plus: shuffle, avoid repeats across sessions, one-skin-per-champion for maximum
-variety, random mirroring, start-in-greyscale, and a countdown sound.
+variety, random mirroring, and start-in-greyscale.
+
+Sound is **off by default**. Browsers refuse to start audio until the page has
+been interacted with, so ticking the box is what unlocks it, and it plays a
+test chime right then so you know it works before you rely on it. If the
+browser still refuses, the box says so rather than staying quiet.
 
 **Framing** picks which crop you draw from: wide splash (the full scene),
 centered splash (character-focused), tall loading portrait, or square crop.
