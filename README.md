@@ -283,11 +283,11 @@ Two things worth knowing:
 
 ## Legal
 
-League of Legends and all splash art are © Riot Games, Inc. Riot of Action is an
-unofficial fan project and is not endorsed by Riot Games. The site itself does
-not host or redistribute any artwork: every image is loaded directly from
-Riot's own CDNs at view time. The one exception in this repository is the
-screenshot above, which is a capture of the interface. It is intended to fall under
-[Riot's Legal Jibber Jabber](https://www.riotgames.com/en/legal) policy on
-non-commercial fan projects. If you plan to put this on a public domain,
-read that policy first; keeping it non-commercial and unbranded is the point.
+Riot of Action was created under Riot Games’ “Legal Jibber Jabber” policy using assets owned by Riot Games. Riot Games does not endorse or sponsor this project.
+
+League of Legends and all splash art are © Riot Games, Inc. The site itself does
+not host or redistribute any artwork: every image is loaded directly from Riot's
+own CDNs at view time. The one exception in this repository is the screenshot
+above, which is a capture of the interface. See Riot's
+[Legal Jibber Jabber](https://www.riotgames.com/en/legal) policy for the terms
+fan projects follow.
