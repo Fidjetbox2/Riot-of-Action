@@ -148,7 +148,9 @@ One sort deserves a caveat: **Most-skinned champions**. Riot publishes no pick
 rates, no skin sales and no popularity figures of any kind, so there is no
 honest way to sort by popularity. This sorts by how many skins each champion
 has, which is Riot's own investment in them. That is a real signal, just an
-indirect one. It is named for what it does rather than what it approximates. Click anything for a full-size view with its metadata. **Practice these**
+indirect one. It is named for what it does rather than what it approximates.
+
+Click anything for a full-size view with its metadata. **Practice these**
 starts a session from exactly what you are looking at.
 
 ---
