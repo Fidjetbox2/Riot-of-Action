@@ -1,29 +1,16 @@
 # Riot of Action
 
-Timed drawing practice, like QuickPoses or Line of Action, but the reference pool is
-Riot Games' League of Legends splash art: **2,116 illustrations across 173
-champions**.
+Timed drawing practice, like QuickPoses or Line of Action, but the reference
+pool is Riot Games' League of Legends splash art: **2,116 illustrations across
+173 champions**.
 
-No build step, no dependencies, no server required. Open `index.html`.
+Pick what you want to draw, set a timer, and go. You can filter the pool by
+gender, champion, species, region, class, skin line, release date or skin tier,
+or start from one of fourteen ready-made collections. While drawing you get
+mirror, greyscale, blur, a grid overlay and a dim toggle.
 
----
-
-## Running it
-
-Double-click `index.html`. That is the whole install. The illustration index
-ships as `data/skins.js`, a plain JS assignment rather than JSON, specifically
-so the page works from `file://` without a web server.
-
-If you would rather serve it, from inside this folder:
-
-```bash
-python -m http.server 8777
-```
-
-Images stream from Riot's own CDNs (Data Dragon and Community Dragon), so you
-need to be online, but nothing is downloaded to disk and nothing is uploaded
-anywhere. Your filters, session settings and "already seen" history live in
-`localStorage` in your browser only.
+It is a static site. No build step, no dependencies, no server, no accounts,
+and nothing leaves your browser.
 
 ---
 
@@ -159,6 +146,25 @@ honest way to sort by popularity. This sorts by how many skins each champion
 has, which is Riot's own investment in them. That is a real signal, just an
 indirect one. It is named for what it does rather than what it approximates. Click anything for a full-size view with its metadata. **Practice these**
 starts a session from exactly what you are looking at.
+
+---
+
+## Running it locally
+
+Double-click `index.html`. That is the whole install. The illustration index
+ships as `data/skins.js`, a plain JS assignment rather than JSON, specifically
+so the page works from `file://` without a web server.
+
+If you would rather serve it, from inside this folder:
+
+```bash
+python -m http.server 8777
+```
+
+Images stream from Riot's own CDNs (Data Dragon and Community Dragon), so you
+need to be online, but nothing is downloaded to disk and nothing is uploaded
+anywhere. Your filters, session settings and "already seen" history live in
+`localStorage` in your browser only.
 
 ---
 
