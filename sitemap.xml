@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- One entry on purpose: Practice and Gallery are #/ hash routes on the same
+     page, and search engines do not treat fragments as separate URLs. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://riot-of-action.vercel.app/</loc>
+    <lastmod>2026-09-11</lastmod>
+    <changefreq>monthly</changefreq>
+  </url>
+</urlset>

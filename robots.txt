@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Build scripts, not pages. Nothing useful for a search result in there.
+Disallow: /tools/
+
+Sitemap: https://riot-of-action.vercel.app/sitemap.xml
