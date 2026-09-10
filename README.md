@@ -12,6 +12,8 @@ mirror, greyscale, blur, a grid overlay and a dim toggle.
 It is a static site. No build step, no dependencies, no server, no accounts,
 and nothing leaves your browser.
 
+![The practice page, showing the collections grid and the filter sidebar](docs/screenshot.jpg)
+
 ---
 
 ## What it does
@@ -280,9 +282,10 @@ Two things worth knowing:
 ## Legal
 
 League of Legends and all splash art are © Riot Games, Inc. Riot of Action is an
-unofficial fan project, is not endorsed by Riot Games, and does not host, copy
-or redistribute any artwork. Images are loaded directly from Riot's own CDNs
-at view time. It is intended to fall under
+unofficial fan project and is not endorsed by Riot Games. The site itself does
+not host or redistribute any artwork: every image is loaded directly from
+Riot's own CDNs at view time. The one exception in this repository is the
+screenshot above, which is a capture of the interface. It is intended to fall under
 [Riot's Legal Jibber Jabber](https://www.riotgames.com/en/legal) policy on
 non-commercial fan projects. If you plan to put this on a public domain,
 read that policy first; keeping it non-commercial and unbranded is the point.
