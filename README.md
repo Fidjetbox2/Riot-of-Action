@@ -14,10 +14,10 @@ Double-click `index.html`. That is the whole install. The illustration index
 ships as `data/skins.js`, a plain JS assignment rather than JSON, specifically
 so the page works from `file://` without a web server.
 
-If you would rather serve it:
+If you would rather serve it, from inside this folder:
 
 ```bash
-python -m http.server 8777 --directory RiotofAction
+python -m http.server 8777
 ```
 
 Images stream from Riot's own CDNs (Data Dragon and Community Dragon), so you
@@ -256,6 +256,20 @@ cache/dates.json    derived release dates, kept so a rebuild need not re-walk
 ```
 
 ---
+
+## Deploying
+
+It is a static site with no build step, so any static host works. On Vercel:
+import the repo, set Framework Preset to **Other**, and leave Build Command and
+Output Directory empty. There is nothing to build.
+
+Two things worth knowing:
+
+- The artwork loads from Riot's CDNs, not from your host, so each visitor pulls
+  only about 400KB of code from you. Hosting bandwidth stays tiny even under
+  load.
+- `cache/` is deliberately not committed. It is 8.4MB of regenerable build data
+  and the site does not read it at runtime.
 
 ## Legal
 
