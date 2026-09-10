@@ -36,7 +36,7 @@ and each option shows how many illustrations it would leave you.
 
 | Filter | Values |
 | --- | --- |
-| **Gender** | Female · Male · Other (dual beings and anything with no gendered presentation) |
+| **Gender** | Male · Female · Other (dual beings and anything with no gendered presentation) |
 | **Skin line / theme** | 225 lines, alphabetical, with 22 marquee themes pinned above |
 | **Champion** | All 173, searchable, with portraits |
 | **Species / body type** | Human, Yordle, Vastaya, Undead, Spirit, Beast, Construct, Celestial, Void, Darkin, Dragon, Demon, Elemental, Ascended, Demigod, Plant |

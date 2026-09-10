@@ -55,9 +55,10 @@ REGION_LABELS = {
     "runeterra": "Runeterra (unaffiliated)",
 }
 
+# Order here is the order the sidebar shows them in.
 GENDER_LABELS = {
-    "female": "Female",
     "male": "Male",
+    "female": "Female",
     "other": "Other",
 }
 
