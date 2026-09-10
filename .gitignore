@@ -1,0 +1,18 @@
+# Build caches: large, regenerable, and not needed to run the site.
+# Recreate with `python tools/fetch_raw.py` and `python tools/fetch_dates.py`.
+cache/
+
+# Python
+__pycache__/
+*.pyc
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Local dev only
+.claude/
+_*.html
