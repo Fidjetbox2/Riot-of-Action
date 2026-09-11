@@ -588,7 +588,7 @@ select:disabled { cursor: not-allowed; }
 }
 .lb-figure { margin: 0; max-width: 100%; max-height: 100%; text-align: center; }
 .lb-figure img {
-  max-width: 100%; max-height: calc(100vh - 130px);
+  max-width: 100%; max-height: calc(var(--app-h, 100vh) - 130px);
   border-radius: var(--radius); box-shadow: var(--shadow);
 }
 .lb-figure figcaption { margin-top: 12px; color: var(--ink-2); font-size: 13px; }
@@ -833,22 +833,22 @@ select:disabled { cursor: not-allowed; }
    empty on each side. From about 2000px the setup cards move into a
    right-hand rail that stays in view, the collections take the rest of the
    width, and their cards grow so the two columns come out a similar height. */
-@media (min-width: 2000px) {
-  .setup {
-    max-width: 2800px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 420px;
-    grid-template-rows: auto 1fr;
-    column-gap: 28px;
-    align-items: start;
-  }
-  .setup-hero { grid-column: 1; grid-row: 1; }
-  .collections-block { grid-column: 1; grid-row: 2; margin-bottom: 0; }
-  .collections { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
-  .setup-grid {
-    grid-column: 2; grid-row: 1 / span 2;
-    grid-template-columns: minmax(0, 1fr);
-    position: sticky; top: 0;
-  }
-  .start-card { position: static; }
+/* html.wide is set by the sizing script in index.html, from the width the
+   page actually lays out at once scaled. */
+html.wide .setup {
+  max-width: 2800px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  grid-template-rows: auto 1fr;
+  column-gap: 28px;
+  align-items: start;
 }
+html.wide .setup-hero { grid-column: 1; grid-row: 1; }
+html.wide .collections-block { grid-column: 1; grid-row: 2; margin-bottom: 0; }
+html.wide .collections { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+html.wide .setup-grid {
+  grid-column: 2; grid-row: 1 / span 2;
+  grid-template-columns: minmax(0, 1fr);
+  position: sticky; top: 0;
+}
+html.wide .start-card { position: static; }

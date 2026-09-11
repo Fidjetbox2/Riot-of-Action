@@ -383,15 +383,16 @@ const Session = (function () {
     const ov = document.getElementById('grid-overlay');
     if (ov.hidden) return;
     const img = document.getElementById('stage-img');
-    const stage = document.getElementById('stage');
-    const a = img.getBoundingClientRect();
-    const b = stage.getBoundingClientRect();
-    if (!a.width || !a.height || !img.naturalWidth) return;
-    const scale = Math.min(a.width / img.naturalWidth, a.height / img.naturalHeight);
+    // Offsets, not getBoundingClientRect: they are in the same CSS pixels as
+    // the overlay's own left/top whatever zoom the page is at, whereas
+    // bounding rects come back in screen pixels once the page is scaled.
+    const bw = img.offsetWidth, bh = img.offsetHeight;
+    if (!bw || !bh || !img.naturalWidth) return;
+    const scale = Math.min(bw / img.naturalWidth, bh / img.naturalHeight);
     const w = img.naturalWidth * scale;
     const h = img.naturalHeight * scale;
-    ov.style.left = (a.left - b.left + (a.width - w) / 2) + 'px';
-    ov.style.top = (a.top - b.top + (a.height - h) / 2) + 'px';
+    ov.style.left = (img.offsetLeft + (bw - w) / 2) + 'px';
+    ov.style.top = (img.offsetTop + (bh - h) / 2) + 'px';
     ov.style.width = w + 'px';
     ov.style.height = h + 'px';
   }

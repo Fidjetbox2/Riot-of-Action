@@ -3,6 +3,59 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* The layout is composed for a screen about 1080px tall. On a 1440p or 4K
+   monitor it used to sit in the top part of the screen with the rest empty.
+   Scaling the whole page by height gives big screens the same composition,
+   just larger. No images get upscaled: thumbnails are 1215px sources shown at
+   a few hundred pixels either way. Capped at 2x, and never so far that the
+   page would lay out narrower than 1280px, so tall narrow windows still work.
+   Runs here, before first paint, so nothing jumps. */
+(function () {
+  var root = document.documentElement;
+  var STORE = 'riotofaction.basedpr.v1';
+  var last = '', screenId = '', base = 1;
+  function fit() {
+    // Ctrl + / - changes innerWidth and innerHeight too, so on its own this
+    // would undo the browser's zoom: zoom out on a 4K screen and the page
+    // scales straight back up. Remember the pixel ratio each screen had the
+    // first time the site was opened on it, and let any zoom on top of that
+    // stack with ours.
+    var dpr = window.devicePixelRatio || 1;
+    var id = screen.width + 'x' + screen.height;
+    if (id !== screenId) {
+      screenId = id;
+      var seen = {};
+      try { seen = JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) {}
+      if (!seen[id]) {
+        seen[id] = dpr;
+        try { localStorage.setItem(STORE, JSON.stringify(seen)); } catch (e) {}
+      }
+      base = seen[id];
+    }
+    var bz = dpr / base;
+    var w = innerWidth, h = innerHeight;
+    var z = Math.min(2, h * bz / 1080, w * bz / 1280);
+    z = z < 1.05 ? 1 : Math.round(z * 100) / 100;
+    var key = w + 'x' + h + '@' + z;
+    if (key === last) return;
+    last = key;
+    root.style.zoom = z === 1 ? '' : String(z);
+    // 100vh does not account for zoom, so hand CSS the real usable height.
+    root.style.setProperty('--app-h', (h / z) + 'px');
+    // Media queries see the physical width, not the scaled one, so the
+    // two-column practice layout is switched on from here instead.
+    root.classList.toggle('wide', w / z >= 2000);
+  }
+  fit();
+  addEventListener('resize', fit);
+  if (window.visualViewport) visualViewport.addEventListener('resize', fit);
+  // Not every size change fires an event (dragging a window to a monitor
+  // with different scaling, some emulators), so also check twice a second.
+  // fit() returns straight away when nothing has changed.
+  setInterval(fit, 500);
+})();
+</script>
 <title>Riot of Action: timed drawing practice with League of Legends splash art</title>
 <meta name="description" content="Timed figure and character drawing practice using League of Legends splash art. Filter by gender, champion, species, region, class, skin line and more.">
 <meta name="theme-color" content="#0a0d12">
