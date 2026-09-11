@@ -223,8 +223,60 @@ const Presets = (function () {
     return null;
   }
 
-  /* Built-ins first, saved ones after. */
-  function all() { return LIST.concat(readCustom()); }
+  /* ── Your playlist ───────────────────────────────────────────────────
+     Specific images picked by hand, from the gallery or the end of a
+     session. Stored as ids and shown as one more collection, so it goes
+     through the same timer, Start button and gallery as everything else.
+     ─────────────────────────────────────────────────────────────────── */
+
+  const PLAYLIST_KEY = 'riotofaction.playlist.v1';
+  const listeners = [];
+
+  function readPlaylist() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(PLAYLIST_KEY) || '[]');
+      return Array.isArray(raw) ? raw.filter(function (id) { return typeof id === 'string'; }) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function writePlaylist(ids) {
+    try { localStorage.setItem(PLAYLIST_KEY, JSON.stringify(ids)); }
+    catch (e) { return; }
+    listeners.forEach(function (fn) { fn(ids); });
+  }
+
+  const playlist = {
+    ids: readPlaylist,
+    has: function (id) { return readPlaylist().indexOf(id) !== -1; },
+    /* Returns whether the image is in the playlist afterwards. */
+    toggle: function (id) {
+      const ids = readPlaylist();
+      const i = ids.indexOf(id);
+      if (i === -1) ids.push(id); else ids.splice(i, 1);
+      writePlaylist(ids);
+      return i === -1;
+    },
+    clear: function () { writePlaylist([]); },
+    onChange: function (fn) { listeners.push(fn); }
+  };
+
+  /* Only shown once there is something in it. */
+  function playlistCard() {
+    const ids = readPlaylist();
+    if (!ids.length) return [];
+    return [{
+      id: 'playlist',
+      name: 'Your playlist',
+      blurb: 'Images you picked, from the gallery or after a session.',
+      filters: { ids: ids },
+      playlist: true
+    }];
+  }
+
+  /* Built-ins first, then the playlist, then saved ones. */
+  function all() { return LIST.concat(playlistCard(), readCustom()); }
 
   /* Resolve line-name patterns against the current dataset. */
   function resolveLines(patterns) {
@@ -297,6 +349,7 @@ const Presets = (function () {
     addCustom: addCustom,
     updateCustom: updateCustom,
     removeCustom: removeCustom,
+    playlist: playlist,
     filtersFor: filtersFor,
     countFor: countFor,
     thumbFor: thumbFor,

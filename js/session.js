@@ -22,6 +22,8 @@ const Session = (function () {
   let idleTimer = null;
   let uiPinned = false;
   let audioCtx = null;
+  let reached = -1;           // furthest image shown, for the summary
+  let elapsed = 0;            // ms actually spent drawing
 
   /* ── Presets ─────────────────────────────────────────────────────── */
 
@@ -179,6 +181,7 @@ const Session = (function () {
   function show(i) {
     if (i < 0 || i >= playlist.length) { finish(); return; }
     index = i;
+    if (i > reached) reached = i;
     const rec = playlist[i];
     const player = document.getElementById('player');
     const img = document.getElementById('stage-img');
@@ -254,6 +257,9 @@ const Session = (function () {
     const now = Date.now();
     const dt = now - lastTick;
     lastTick = now;
+    // Paused time does not count as drawing time. Tabbing away already
+    // pauses (see the visibilitychange handler), so this matches the clock.
+    if (!paused) elapsed += dt;
     if (paused || !duration) return;
 
     const before = remaining;
@@ -470,38 +476,132 @@ const Session = (function () {
     running = true;
     uiPinned = false;
     index = -1;
+    reached = -1;
+    elapsed = 0;
     show(0);
     startClock();
     wakeUI();
     return true;
   }
 
-  function finish() {
+  /* ── Summary ─────────────────────────────────────────────────────── */
+
+  const SUMMARY_CAP = 60;     // thumbnails per group; an endless session's
+                              // "not reached" can be the whole pool
+
+  function fmtSpent(ms) {
+    const s = Math.round(ms / 1000);
+    if (s < 60) return s + (s === 1 ? ' second' : ' seconds');
+    const m = Math.round(s / 60);
+    return m + (m === 1 ? ' minute' : ' minutes');
+  }
+
+  /* A small pool on a long session cycles, so the same image can be in the
+     list more than once. The summary shows each one once. */
+  function uniqueById(recs, skip) {
+    const seen = Object.assign({}, skip || {});
+    return recs.filter(function (r) {
+      if (seen[r.id]) return false;
+      seen[r.id] = 1;
+      return true;
+    });
+  }
+
+  function syncThumbs(id, on) {
+    document.querySelectorAll('#summary .sum-thumb[data-id="' + id + '"]').forEach(function (b) {
+      b.classList.toggle('picked', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  /* Each thumbnail is a toggle for the playlist. */
+  function summaryThumb(rec, picked) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'sum-thumb' + (picked ? ' picked' : '');
+    b.dataset.id = rec.id;
+    b.title = rec.name + ', ' + rec.champ;
+    b.setAttribute('aria-pressed', picked ? 'true' : 'false');
+    const im = document.createElement('img');
+    im.alt = rec.name;
+    SP.loadInto(im, rec, 'tile');
+    b.appendChild(im);
+    b.addEventListener('click', function () { syncThumbs(rec.id, Presets.playlist.toggle(rec.id)); });
+    return b;
+  }
+
+  function summaryGroup(label, recs, dim, picked) {
+    const wrap = document.createElement('section');
+    wrap.className = 'summary-group';
+    const h = document.createElement('span');
+    h.className = 'summary-label';
+    h.textContent = label + ' · ' + recs.length;
+    const strip = document.createElement('div');
+    strip.className = 'summary-strip' + (dim ? ' is-rest' : '');
+    recs.slice(0, SUMMARY_CAP).forEach(function (rec) {
+      strip.appendChild(summaryThumb(rec, picked.indexOf(rec.id) !== -1));
+    });
+    if (recs.length > SUMMARY_CAP) {
+      const more = document.createElement('span');
+      more.className = 'summary-more';
+      more.textContent = '+' + (recs.length - SUMMARY_CAP).toLocaleString() + ' more';
+      strip.appendChild(more);
+    }
+    wrap.appendChild(h);
+    wrap.appendChild(strip);
+    return wrap;
+  }
+
+  /* Reached by running off the end of the schedule, or from End early.
+     Either way, everything up to the furthest image shown counts as drawn. */
+  function finish(early) {
     running = false;
     clearInterval(clockId);
     flushSeen();
 
-    // finish() is only reached by running off the end of the schedule, so
-    // every image in the playlist was actually shown.
-    const done = playlist.slice();
-    const secs = schedule.slice(0, done.length).reduce(function (a, b) { return a + b; }, 0) / 1000;
-    document.getElementById('summary-line').textContent =
-      done.length + ' illustration' + (done.length === 1 ? '' : 's') +
-      (secs ? ' · ' + Math.round(secs / 60) + ' minutes of drawing time' : '');
+    const done = playlist.slice(0, reached + 1);
+    const rest = playlist.slice(reached + 1);
+    const picked = Presets.playlist.ids();
 
-    const strip = document.getElementById('summary-strip');
-    strip.innerHTML = '';
-    done.slice(-24).forEach(function (rec) {
-      const im = document.createElement('img');
-      im.alt = rec.name;
-      im.title = rec.name + ', ' + rec.champ;
-      SP.loadInto(im, rec, 'tile');
-      strip.appendChild(im);
-    });
+    document.getElementById('summary-title').textContent =
+      rest.length ? 'Ended early' : 'Session complete';
+    document.getElementById('summary-line').textContent =
+      done.length + (rest.length ? ' of ' + playlist.length : '') + ' drawn' +
+      (elapsed >= 1000 ? ' · ' + fmtSpent(elapsed) + ' of drawing time' : '');
+
+    const groups = document.getElementById('summary-groups');
+    groups.innerHTML = '';
+    const doneUnique = uniqueById(done);
+    groups.appendChild(summaryGroup('Drawn', doneUnique, false, picked));
+    const seen = {};
+    doneUnique.forEach(function (r) { seen[r.id] = 1; });
+    const restUnique = uniqueById(rest, seen);
+    if (restUnique.length) groups.appendChild(summaryGroup('Not reached', restUnique, true, picked));
+
+    const resumeBtn = document.getElementById('btn-resume');
+    resumeBtn.hidden = !rest.length;
+    resumeBtn.textContent = 'Finish the rest (' + rest.length.toLocaleString() + ')';
+    // Only one primary action at a time.
+    document.getElementById('btn-again').className = rest.length ? 'btn ghost' : 'btn primary';
 
     document.getElementById('player').classList.remove('ui-hidden');
     document.getElementById('summary').hidden = false;
-    chime();
+    if (!early) chime();
+  }
+
+  function endEarly() {
+    if (running) finish(true);
+  }
+
+  /* Pick up where End early left off, keeping the same numbering, so the
+     next summary still covers the whole session. */
+  function resume() {
+    if (reached + 1 >= playlist.length) return;
+    document.getElementById('summary').hidden = true;
+    running = true;
+    show(reached + 1);
+    startClock();
+    wakeUI();
   }
 
   function stop() {
@@ -559,6 +659,8 @@ const Session = (function () {
     document.getElementById('btn-exit').addEventListener('click', function () { stop(); onExit(); });
     document.getElementById('btn-again').addEventListener('click', function () { onAgain(); });
     document.getElementById('btn-back-setup').addEventListener('click', function () { stop(); onSettings(); });
+    document.getElementById('btn-end').addEventListener('click', endEarly);
+    document.getElementById('btn-resume').addEventListener('click', resume);
 
     document.querySelectorAll('.tool[data-toggle]').forEach(function (b) {
       b.addEventListener('click', function () { toggleFlag(b.dataset.toggle); });
@@ -615,6 +717,7 @@ const Session = (function () {
         case 'd': case 'D': toggleFlag('dim'); break;
         case 's': case 'S': toggleFlag('native'); break;
         case 't': case 'T': addTime(30); break;
+        case 'e': case 'E': endEarly(); break;
         case 'v': case 'V': toggleFullscreen(); break;
         case 'h': case 'H':
           uiPinned = !uiPinned;

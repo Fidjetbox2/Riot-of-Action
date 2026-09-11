@@ -113,10 +113,12 @@ const SP = (function () {
 
   /* ── Filtering ───────────────────────────────────────────────────── */
 
+  /* `ids` pins the result to hand-picked images (the playlist). It has no
+     sidebar facet of its own; it only ever arrives through a collection. */
   const EMPTY = {
     q: '', champions: [], gender: [], species: [], region: [],
     role: [], rarity: [], lines: [], years: [], since: 'any',
-    legacy: 'any', base: 'any'
+    legacy: 'any', base: 'any', ids: []
   };
 
   /* Release dates are stored as year*100+month; 0 means "at or before the
@@ -138,7 +140,8 @@ const SP = (function () {
   function isActive(f) {
     return !!(f.q || f.champions.length || f.gender.length || f.species.length ||
       f.region.length || f.role.length || f.rarity.length || f.lines.length ||
-      f.years.length || f.since !== 'any' || f.legacy !== 'any' || f.base !== 'any');
+      f.years.length || f.since !== 'any' || f.legacy !== 'any' || f.base !== 'any' ||
+      (f.ids && f.ids.length));
   }
 
   /* `skip` lets a facet count its own options against everything *but* itself,
@@ -150,6 +153,7 @@ const SP = (function () {
         if (rec.search.indexOf(terms[i]) === -1) return false;
       }
     }
+    if (skip !== 'ids' && f.ids && f.ids.length && f.ids.indexOf(rec.id) === -1) return false;
     if (skip !== 'champions' && f.champions.length && f.champions.indexOf(rec.alias) === -1) return false;
     if (skip !== 'gender' && f.gender.length && f.gender.indexOf(rec.gender) === -1) return false;
     if (skip !== 'species' && f.species.length && f.species.indexOf(rec.species) === -1) return false;

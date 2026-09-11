@@ -14,15 +14,17 @@ const Gallery = (function () {
   let crop = 'splash';
   let observer = null;
   let lbIndex = -1;
+  let lbRec = null;           // the open image, which survives a re-render
 
   const gridEl = function () { return document.getElementById('gallery-grid'); };
   const endEl = function () { return document.getElementById('gallery-end'); };
 
   /* ── Tiles ───────────────────────────────────────────────────────── */
 
-  function makeTile(rec, index) {
+  function makeTile(rec, index, picked) {
     const fig = document.createElement('figure');
-    fig.className = 'tile';
+    fig.className = 'tile' + (picked ? ' picked' : '');
+    fig.dataset.id = rec.id;
     fig.style.setProperty('--tile-ratio', SP.ratio(crop));
     fig.tabIndex = 0;
     fig.setAttribute('role', 'button');
@@ -71,7 +73,8 @@ const Gallery = (function () {
     const grid = gridEl();
     const frag = document.createDocumentFragment();
     const stop = Math.min(shown + PAGE, list.length);
-    for (let i = shown; i < stop; i++) frag.appendChild(makeTile(list[i], i));
+    const picked = new Set(Presets.playlist.ids());
+    for (let i = shown; i < stop; i++) frag.appendChild(makeTile(list[i], i, picked.has(list[i].id)));
     grid.appendChild(frag);
     shown = stop;
 
@@ -151,6 +154,7 @@ const Gallery = (function () {
     if (i < 0 || i >= list.length) return;
     lbIndex = i;
     const rec = list[i];
+    lbRec = rec;
     const box = document.getElementById('lightbox');
     const img = document.getElementById('lb-img');
 
@@ -174,12 +178,35 @@ const Gallery = (function () {
     cap.querySelector('.who').textContent = rec.champ + ', ' + rec.title;
     cap.querySelector('.meta').textContent = ' · ' + bits.join(' · ');
 
+    syncPick();
     box.hidden = false;
+  }
+
+  /* Uses the record, not list[lbIndex]: picking re-renders the gallery when
+     the playlist is what is showing, and the index then points elsewhere. */
+  function syncPick() {
+    if (!lbRec) return;
+    const on = Presets.playlist.has(lbRec.id);
+    const btn = document.getElementById('lb-pick');
+    btn.classList.toggle('picked', on);
+    btn.textContent = on ? '✓ In your playlist' : '+ Add to playlist';
+    btn.title = (on ? 'Remove from' : 'Add to') + ' your playlist (P)';
+  }
+
+  function togglePick() {
+    if (!lbRec) return;
+    const id = lbRec.id;
+    const on = Presets.playlist.toggle(id);
+    document.querySelectorAll('#gallery-grid .tile[data-id="' + id + '"]').forEach(function (t) {
+      t.classList.toggle('picked', on);
+    });
+    syncPick();
   }
 
   function closeLightbox() {
     document.getElementById('lightbox').hidden = true;
     lbIndex = -1;
+    lbRec = null;
   }
 
   function step(delta) {
@@ -198,6 +225,7 @@ const Gallery = (function () {
     document.getElementById('lb-next').addEventListener('click', function (e) {
       e.stopPropagation(); step(1);
     });
+    document.getElementById('lb-pick').addEventListener('click', togglePick);
     document.getElementById('lightbox').addEventListener('click', function (e) {
       if (e.target.id === 'lightbox') closeLightbox();
     });
@@ -206,6 +234,7 @@ const Gallery = (function () {
       if (e.key === 'Escape') closeLightbox();
       else if (e.key === 'ArrowLeft') step(-1);
       else if (e.key === 'ArrowRight') step(1);
+      else if (e.key === 'p' || e.key === 'P') togglePick();
     });
   }
 

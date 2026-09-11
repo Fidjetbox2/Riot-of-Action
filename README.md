@@ -74,6 +74,18 @@ They live in `localStorage` under `riotofaction.collections.v1`, so they are
 per-browser and never leave the machine. Clearing site data clears them; there
 is no export yet.
 
+### Your playlist
+
+For specific images rather than a filter. Add one with **+ Add to playlist**
+in the gallery's full-size view (or <kbd>P</kbd>), or by clicking its thumbnail
+on the end-of-session summary. Picked images get a teal tick in the gallery.
+
+Once it has anything in it, the playlist appears as a collection card, so it
+works with every timer mode, the gallery and **Practice these** like any other
+collection. The × on the card clears it. Saving your current filters while the
+playlist is selected keeps a copy as its own collection, which is how you get
+more than one playlist.
+
 ### Practice
 
 Four rhythms:
@@ -132,11 +144,16 @@ to the filter search.
 | <kbd>S</kbd> | Original size, no scaling |
 | <kbd>V</kbd> | Fullscreen |
 | <kbd>H</kbd> | Hide the controls |
-| <kbd>Esc</kbd> | End the session |
+| <kbd>E</kbd> | End early and see what you drew |
+| <kbd>Esc</kbd> | Quit without a summary |
 
 The tool bar hides itself while you are drawing but the clock and timer bar never
 do. Switching to another tab pauses the timer rather than burning through your
 schedule.
+
+**End early** (top right, or <kbd>E</kbd>) stops and shows the summary: what
+you drew, what you did not reach, and how long you actually spent drawing.
+**Finish the rest** picks up where you stopped.
 
 ### Gallery
 

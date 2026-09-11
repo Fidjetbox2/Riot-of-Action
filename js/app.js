@@ -266,22 +266,20 @@
 
       if (p.custom) {
         card.classList.add('is-custom');
-        const edit = document.createElement('span');
-        edit.className = 'collection-edit';
-        edit.setAttribute('role', 'button');
-        edit.tabIndex = 0;
-        edit.title = 'Edit “' + p.name + '”';
-        edit.setAttribute('aria-label', 'Edit ' + p.name);
-        edit.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>';
-        const openEdit = function (e) {
-          e.stopPropagation();          // don't apply the collection as well
-          openModal(p);
-        };
-        edit.addEventListener('click', openEdit);
-        edit.addEventListener('keydown', function (e) {
-          if (e.key === 'Enter' || e.key === ' ') openEdit(e);
-        });
-        card.appendChild(edit);
+        card.appendChild(cornerButton('Edit “' + p.name + '”',
+          '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+          function () { openModal(p); }));
+      }
+
+      if (p.playlist) {
+        card.classList.add('is-custom');
+        card.appendChild(cornerButton('Clear your playlist',
+          '<path d="M6 6l12 12M18 6L6 18"/>',
+          function () {
+            const n = p.filters.ids.length;
+            if (!confirm('Remove all ' + n + ' image' + (n === 1 ? '' : 's') + ' from your playlist?')) return;
+            Presets.playlist.clear();
+          }));
       }
 
       card.addEventListener('click', function () { applyPreset(p); });
@@ -289,6 +287,27 @@
     });
 
     host.appendChild(makeSaveCard());
+  }
+
+  /* The small button in a card's corner. A span rather than a <button>,
+     since the whole card already is one. */
+  function cornerButton(label, svgPath, onActivate) {
+    const b = document.createElement('span');
+    b.className = 'collection-edit';
+    b.setAttribute('role', 'button');
+    b.tabIndex = 0;
+    b.title = label;
+    b.setAttribute('aria-label', label);
+    b.innerHTML = '<svg viewBox="0 0 24 24">' + svgPath + '</svg>';
+    const run = function (e) {
+      e.stopPropagation();              // don't apply the collection as well
+      onActivate();
+    };
+    b.addEventListener('click', run);
+    b.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); run(e); }
+    });
+    return b;
   }
 
   /* The trailing "save what I have now" card. */
@@ -337,6 +356,7 @@
     if (f.base !== 'any') bits.push(f.base === 'only' ? 'base only' : 'no base');
     if (f.legacy !== 'any') bits.push(f.legacy === 'only' ? 'legacy only' : 'no legacy');
     if (f.q) bits.push('search “' + f.q + '”');
+    if (f.ids && f.ids.length) bits.push(f.ids.length + ' picked image' + (f.ids.length === 1 ? '' : 's'));
     return bits.length ? bits.join(', ') : 'no filters';
   }
 
@@ -638,6 +658,19 @@
     buildPresets();
     buildCollections();
     Presets.validate();
+    // Picking an image (gallery lightbox, end-of-session summary) changes the
+    // playlist card's count, or makes it appear in the first place. While the
+    // playlist is what is being shown, keep showing it as it changes, rather
+    // than leaving the old list up with nothing highlighted.
+    let lastPlaylist = JSON.stringify(Presets.playlist.ids());
+    Presets.playlist.onChange(function (ids) {
+      const f = Filters.get();
+      const showing = f.ids.length > 0 && JSON.stringify(f.ids) === lastPlaylist;
+      lastPlaylist = JSON.stringify(ids);
+      buildCollections();
+      if (showing) { f.ids = ids.slice(); Filters.set(f); }
+      else syncActivePreset();
+    });
 
     document.querySelectorAll('#mode-tabs button').forEach(function (b) {
       b.addEventListener('click', function () { config.mode = b.dataset.mode; syncSetup(); });

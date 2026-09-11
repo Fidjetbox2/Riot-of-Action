@@ -334,6 +334,7 @@
   <figure class="lb-figure">
     <img id="lb-img" alt="">
     <figcaption id="lb-caption"></figcaption>
+    <div class="lb-actions"><button class="btn sm lb-pick" id="lb-pick" type="button"></button></div>
   </figure>
 </div>
 
@@ -385,7 +386,7 @@
   <div class="timer-bar" id="timer-bar"><span id="timer-fill"></span></div>
 
   <div class="player-top" id="player-top">
-    <button class="icon-btn" id="btn-exit" title="End session (Esc)">
+    <button class="icon-btn" id="btn-exit" title="Quit without a summary (Esc)">
       <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
     <div class="now-playing">
@@ -393,6 +394,7 @@
       <span id="np-champ" class="muted"></span>
     </div>
     <div class="player-top-right">
+      <button class="tool" id="btn-end" title="End early and see what you drew (E)">End early</button>
       <span class="clock" id="np-clock">0:30</span>
       <span class="pill" id="np-progress">1 / 30</span>
     </div>
@@ -426,10 +428,12 @@
   <!-- End-of-session summary -->
   <div class="summary" id="summary" hidden>
     <div class="summary-inner">
-      <h2>Session complete</h2>
+      <h2 id="summary-title">Session complete</h2>
       <p id="summary-line" class="muted"></p>
-      <div class="summary-strip" id="summary-strip"></div>
+      <div id="summary-groups"></div>
+      <p class="summary-hint">Click an image to add it to your playlist. It shows up with the collections.</p>
       <div class="summary-actions">
+        <button class="btn primary" id="btn-resume" hidden>Finish the rest</button>
         <button class="btn primary" id="btn-again">Go again</button>
         <button class="btn ghost" id="btn-back-setup">Change settings</button>
       </div>
@@ -452,7 +456,8 @@
         <dt><kbd>S</kbd></dt><dd>Original size, no scaling</dd>
         <dt><kbd>V</kbd></dt><dd>Fullscreen</dd>
         <dt><kbd>H</kbd></dt><dd>Hide the controls</dd>
-        <dt><kbd>Esc</kbd></dt><dd>End the session</dd>
+        <dt><kbd>E</kbd></dt><dd>End early and see what you drew</dd>
+        <dt><kbd>Esc</kbd></dt><dd>Quit without a summary</dd>
       </dl>
       <button class="btn ghost sm" id="btn-help-close">Close</button>
     </div>

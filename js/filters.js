@@ -398,6 +398,10 @@ const Filters = (function () {
       chips.push({ text: (state.legacy === 'only' ? 'Legacy only' : 'No legacy skins'),
         clear: function () { state.legacy = 'any'; } });
     }
+    if (state.ids && state.ids.length) {
+      chips.push({ text: 'Your playlist · ' + state.ids.length,
+        clear: function () { state.ids = []; } });
+    }
     if (state.q) {
       chips.push({ text: '“' + state.q + '”', clear: function () {
         state.q = '';
