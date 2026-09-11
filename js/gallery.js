@@ -86,10 +86,32 @@ const Gallery = (function () {
     }
   }
 
+  /* One page of tiles can fall short of filling a big screen. The observer
+     only fires when the sentinel's visibility *changes*, so if it is already
+     on screen after a page lands it never fires again, and the gallery stalls
+     with nothing to scroll. Keep adding pages until there is some runway. */
+  function fillScreen() {
+    const main = document.getElementById('main');
+    if (!main.clientHeight) return;             // not laid out, nothing to measure
+    let guard = 0;
+    while (shown < list.length && guard++ < 50 &&
+           main.scrollHeight - main.scrollTop - main.clientHeight < 600) {
+      appendPage();
+    }
+  }
+
+  let resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      if (!document.getElementById('view-gallery').hidden) fillScreen();
+    }, 150);
+  });
+
   function setupObserver() {
     if (observer) observer.disconnect();
     observer = new IntersectionObserver(function (entries) {
-      if (entries[0].isIntersecting && shown < list.length) appendPage();
+      if (entries[0].isIntersecting && shown < list.length) { appendPage(); fillScreen(); }
     }, { root: document.getElementById('main'), rootMargin: '600px' });
     observer.observe(endEl());
   }
@@ -119,6 +141,7 @@ const Gallery = (function () {
     }
 
     appendPage();
+    fillScreen();
     setupObserver();
   }
 

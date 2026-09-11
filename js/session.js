@@ -342,14 +342,14 @@ const Session = (function () {
   }
 
   /* The 1:1 toggle only means anything for the two crops Riot ships small. */
+  /* Every framing is scaled to fit the screen now, so 1:1 means something on
+     all of them. It matters most on the two small crops, which is where the
+     tip points people to it. */
   function syncNativeButton() {
     const btn = document.querySelector('.tool[data-toggle="native"]');
     if (!btn) return;
-    const small = isSmallCrop();
-    btn.disabled = !small;
-    btn.title = small
-      ? 'Show this crop at its original size instead of scaling it up (S)'
-      : 'Only applies to the square and portrait crops, which Riot ships small';
+    btn.disabled = false;
+    btn.title = 'Show the image at its original size instead of scaling it to fit (S)';
     syncHint();
   }
 
@@ -375,6 +375,10 @@ const Session = (function () {
   }
 
   /* Park the grid exactly over the rendered image. */
+  /* The <img> box can be bigger than the picture: object-fit: contain
+     letterboxes it whenever the screen is a different shape from the art. So
+     work out where the pixels actually land rather than trusting the box, or
+     the grid would stretch across the empty bars. */
   function fitGrid() {
     const ov = document.getElementById('grid-overlay');
     if (ov.hidden) return;
@@ -382,11 +386,14 @@ const Session = (function () {
     const stage = document.getElementById('stage');
     const a = img.getBoundingClientRect();
     const b = stage.getBoundingClientRect();
-    if (!a.width || !a.height) return;
-    ov.style.left = (a.left - b.left) + 'px';
-    ov.style.top = (a.top - b.top) + 'px';
-    ov.style.width = a.width + 'px';
-    ov.style.height = a.height + 'px';
+    if (!a.width || !a.height || !img.naturalWidth) return;
+    const scale = Math.min(a.width / img.naturalWidth, a.height / img.naturalHeight);
+    const w = img.naturalWidth * scale;
+    const h = img.naturalHeight * scale;
+    ov.style.left = (a.left - b.left + (a.width - w) / 2) + 'px';
+    ov.style.top = (a.top - b.top + (a.height - h) / 2) + 'px';
+    ov.style.width = w + 'px';
+    ov.style.height = h + 'px';
   }
 
   function syncToolButtons() {
@@ -591,9 +598,7 @@ const Session = (function () {
         case 'b': case 'B': toggleFlag('blur'); break;
         case 'r': case 'R': toggleFlag('grid'); break;
         case 'd': case 'D': toggleFlag('dim'); break;
-        case 's': case 'S':
-          if (opts.framing === 'tile' || opts.framing === 'portrait') toggleFlag('native');
-          break;
+        case 's': case 'S': toggleFlag('native'); break;
         case 't': case 'T': addTime(30); break;
         case 'v': case 'V': toggleFullscreen(); break;
         case 'h': case 'H':

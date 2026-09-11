@@ -111,9 +111,9 @@ look good, try 1:1." It only appears while it is actionable, meaning a small
 crop that is currently being scaled up, and it goes away by itself the moment
 you turn 1:1 on. "Got it" dismisses it for good.
 
-1:1 only applies to those two crops and is greyed out on the wide and centered
-splashes, which are already high resolution. The choice is remembered between
-sessions.
+Every framing scales to fill the screen, so 1:1 works on all of them. On the
+wide and centered splashes it shows the image at its native 1215px instead of
+filling your monitor. The choice is remembered between sessions.
 
 On the practice page, <kbd>Enter</kbd> starts the session and <kbd>/</kbd> jumps
 to the filter search.
@@ -130,7 +130,7 @@ to the filter search.
 | <kbd>B</kbd> | Blur (value study) |
 | <kbd>R</kbd> | Grid overlay, thirds plus centre lines |
 | <kbd>D</kbd> | Dim the image |
-| <kbd>S</kbd> | Square / portrait crops at original size |
+| <kbd>S</kbd> | Original size, no scaling |
 | <kbd>V</kbd> | Fullscreen |
 | <kbd>H</kbd> | Hide the controls |
 | <kbd>Esc</kbd> | End the session |
