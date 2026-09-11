@@ -825,3 +825,29 @@ select:disabled { cursor: not-allowed; }
 @media (prefers-reduced-motion: reduce) {
   * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+/* ─── Wide screens ────────────────────────────────────────────────── */
+
+/* On an ultrawide the single centred column still left a third of the screen
+   empty on each side. From about 2000px the setup cards move into a
+   right-hand rail that stays in view, the collections take the rest of the
+   width, and their cards grow so the two columns come out a similar height. */
+@media (min-width: 2000px) {
+  .setup {
+    max-width: 2800px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 420px;
+    grid-template-rows: auto 1fr;
+    column-gap: 28px;
+    align-items: start;
+  }
+  .setup-hero { grid-column: 1; grid-row: 1; }
+  .collections-block { grid-column: 1; grid-row: 2; margin-bottom: 0; }
+  .collections { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .setup-grid {
+    grid-column: 2; grid-row: 1 / span 2;
+    grid-template-columns: minmax(0, 1fr);
+    position: sticky; top: 0;
+  }
+  .start-card { position: static; }
+}
