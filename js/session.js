@@ -316,10 +316,12 @@ const Session = (function () {
     }
     if (name === 'native') {
       // A display preference rather than a per-image study tool, so unlike
-      // flip/grey/blur it carries over to the next session. Merged, not
-      // replaced, so it does not clobber the dismissed-tip flag.
+      // flip/grey/blur it carries over to the next session, remembered for
+      // each framing on its own. Merged, not replaced, so it does not clobber
+      // the dismissed-tip flag.
       const v = readView();
-      v.native = on ? 0 : 1;
+      v.nativeBy = v.nativeBy || {};
+      v.nativeBy[opts.framing] = on ? 0 : 1;
       writeView(v);
       fitGrid();
       syncHint();
@@ -339,6 +341,18 @@ const Session = (function () {
   function writeView(v) {
     try { localStorage.setItem(VIEW_KEY, JSON.stringify(v)); }
     catch (e) { /* ignore */ }
+  }
+
+  /* 1:1 is the default: the art stays sharp. The square crop is the
+     exception, since at 380px it would sit tiny in the middle of the screen,
+     so it (and Faces, which uses it) starts scaled up. Once someone flips the
+     toggle, that framing remembers their choice. The old single 'native'
+     flag could only ever have been switched on for the square crop, so it is
+     still honoured there. */
+  function nativeFor(framing) {
+    const v = readView();
+    if (v.nativeBy && framing in v.nativeBy) return !!v.nativeBy[framing];
+    return framing === 'tile' ? !!v.native : true;
   }
 
   /* The 1:1 toggle only means anything for the two crops Riot ships small. */
@@ -433,7 +447,7 @@ const Session = (function () {
     p.dataset.blur = '0';
     p.dataset.grid = '0';
     p.dataset.dim = '0';
-    p.dataset.native = readView().native ? '1' : '0';
+    p.dataset.native = nativeFor(config.framing) ? '1' : '0';
     syncNativeButton();
     document.getElementById('grid-overlay').hidden = true;
     document.getElementById('summary').hidden = true;

@@ -96,24 +96,23 @@ browser still refuses, the box says so rather than staying quiet.
 **Framing** picks which crop you draw from: wide splash (the full scene),
 centered splash (character-focused), tall loading portrait, or square crop.
 
-The square and portrait crops are the only ones Riot ships small (380x380 and
-308x560). Left alone they would sit tiny in the middle of the screen, so the
-player scales them up, capped just under 2x. That is softer but usable.
+**1:1** is on by default, so every image shows at its real size and stays
+sharp. The exception is the square crop, and so Faces (somewhat): Riot ships
+it at only 380x380, which would sit tiny in the middle of the screen, so it
+starts scaled up instead, capped just under 2x. That is softer but usable.
 
-If you would rather have the sharp original, the **1:1** button in the player
-(or the <kbd>S</kbd> key) turns the scaling off and shows the file at its real
-size. It is the teal button in the tool bar, deliberately styled apart from the
-gold study toggles, because it is the one control people need to find without
-being told.
+The **1:1** button in the player (or the <kbd>S</kbd> key) flips it either way,
+and each framing remembers its own choice. It is the teal button in the tool
+bar, deliberately styled apart from the gold study toggles, because it is the
+one control people need to find without being told.
 
 A tip in the empty margin beside the artwork says so too: "If the image doesn't
 look good, try 1:1." It only appears while it is actionable, meaning a small
 crop that is currently being scaled up, and it goes away by itself the moment
 you turn 1:1 on. "Got it" dismisses it for good.
 
-Every framing scales to fill the screen, so 1:1 works on all of them. On the
-wide and centered splashes it shows the image at its native 1215px instead of
-filling your monitor. The choice is remembered between sessions.
+With 1:1 off, every framing scales to fill the screen. With it on, the wide and
+centered splashes show at their native 1215px and the portrait at 308x560.
 
 On the practice page, <kbd>Enter</kbd> starts the session and <kbd>/</kbd> jumps
 to the filter search.
