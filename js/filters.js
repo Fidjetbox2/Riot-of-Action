@@ -399,7 +399,7 @@ const Filters = (function () {
         clear: function () { state.legacy = 'any'; } });
     }
     if (state.ids && state.ids.length) {
-      chips.push({ text: 'Your playlist · ' + state.ids.length,
+      chips.push({ text: 'Picked images · ' + state.ids.length,
         clear: function () { state.ids = []; } });
     }
     if (state.q) {

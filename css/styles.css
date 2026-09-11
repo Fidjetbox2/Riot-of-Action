@@ -594,10 +594,7 @@ select:disabled { cursor: not-allowed; }
 .lb-figure figcaption { margin-top: 12px; color: var(--ink-2); font-size: 13px; }
 .lb-figure figcaption strong { color: var(--ink); font-size: 15px; display: block; }
 .lb-figure figcaption .meta { color: var(--ink-3); font-size: 12px; }
-.lb-actions { margin-top: 10px; }
-.lb-pick.picked {
-  color: var(--teal); border-color: rgba(53,198,187,.5); background: rgba(53,198,187,.1);
-}
+.lb-actions { margin-top: 10px; display: flex; gap: 8px; justify-content: center; }
 .lb-close { position: absolute; top: 14px; right: 16px; }
 .lb-prev, .lb-next { position: absolute; top: 50%; transform: translateY(-50%);
                      width: 44px; height: 44px; }

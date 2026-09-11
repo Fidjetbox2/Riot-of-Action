@@ -334,7 +334,10 @@
   <figure class="lb-figure">
     <img id="lb-img" alt="">
     <figcaption id="lb-caption"></figcaption>
-    <div class="lb-actions"><button class="btn sm lb-pick" id="lb-pick" type="button"></button></div>
+    <div class="lb-actions">
+      <button class="btn sm" id="lb-pick" type="button" title="Save to playlist (P)">Save to playlist</button>
+      <button class="btn sm ghost" id="lb-remove" type="button" hidden></button>
+    </div>
   </figure>
 </div>
 
@@ -364,6 +367,29 @@
       <button class="btn primary" id="cm-save">Save</button>
       <button class="btn ghost" id="cm-cancel">Cancel</button>
       <button class="btn ghost danger" id="cm-delete" hidden>Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Save to playlist ════════════════════════════════════════════════ -->
+<div class="modal" id="playlist-modal" hidden>
+  <div class="modal-inner" role="dialog" aria-modal="true" aria-labelledby="pm-title">
+    <h3 id="pm-title">Save to playlist</h3>
+    <p class="hint" id="pm-summary"></p>
+
+    <label class="field">
+      <span>Playlist name</span>
+      <input type="text" id="pm-name" maxlength="40" list="pm-names" autocomplete="off">
+    </label>
+    <datalist id="pm-names"></datalist>
+    <p class="hint" id="pm-target"></p>
+    <button class="link-btn" id="pm-new" type="button">Start a new playlist instead</button>
+
+    <p class="modal-error" id="pm-error" hidden></p>
+
+    <div class="modal-actions">
+      <button class="btn primary" id="pm-save">Save</button>
+      <button class="btn ghost" id="pm-cancel">Cancel</button>
     </div>
   </div>
 </div>
@@ -431,10 +457,11 @@
       <h2 id="summary-title">Session complete</h2>
       <p id="summary-line" class="muted"></p>
       <div id="summary-groups"></div>
-      <p class="summary-hint">Click an image to add it to your playlist. It shows up with the collections.</p>
+      <p class="summary-hint" id="summary-hint"></p>
       <div class="summary-actions">
         <button class="btn primary" id="btn-resume" hidden>Finish the rest</button>
         <button class="btn primary" id="btn-again">Go again</button>
+        <button class="btn ghost" id="btn-save-playlist">Save to playlist</button>
         <button class="btn ghost" id="btn-back-setup">Exit</button>
       </div>
     </div>

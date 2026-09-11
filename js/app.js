@@ -271,17 +271,6 @@
           function () { openModal(p); }));
       }
 
-      if (p.playlist) {
-        card.classList.add('is-custom');
-        card.appendChild(cornerButton('Clear your playlist',
-          '<path d="M6 6l12 12M18 6L6 18"/>',
-          function () {
-            const n = p.filters.ids.length;
-            if (!confirm('Remove all ' + n + ' image' + (n === 1 ? '' : 's') + ' from your playlist?')) return;
-            Presets.playlist.clear();
-          }));
-      }
-
       card.addEventListener('click', function () { applyPreset(p); });
       host.appendChild(card);
     });
@@ -369,7 +358,8 @@
     $('cm-name').value = isEdit ? preset.name : '';
     $('cm-blurb').value = isEdit ? (preset.blurb || '') : '';
     $('cm-delete').hidden = !isEdit;
-    $('cm-replace-wrap').hidden = !isEdit;
+    // A playlist's contents are its picks, not whatever the sidebar has.
+    $('cm-replace-wrap').hidden = !isEdit || !!preset.playlist;
     $('cm-replace').checked = false;
     $('cm-error').hidden = true;
 
@@ -438,6 +428,80 @@
     closeModal();
     buildCollections();
     syncActivePreset();
+    Gallery.refreshPicks();
+  }
+
+  /* ── Save to playlist dialog ─────────────────────────────────────── */
+
+  let pmRecs = [];
+  let pmDone = null;
+
+  /* Offers the playlist saved to last, so adding images one at a time is
+     just Enter. An empty name falls back to the next free "Playlist N". */
+  function openPlaylistModal(recs, done) {
+    pmRecs = recs;
+    pmDone = done;
+    const last = Presets.lastPlaylist();
+    const names = $('pm-names');
+    names.innerHTML = '';
+    Presets.playlists().forEach(function (p) {
+      const o = document.createElement('option');
+      o.value = p.name;
+      names.appendChild(o);
+    });
+    $('pm-summary').textContent = recs.length === 1
+      ? 'Saving “' + recs[0].name + '”.'
+      : 'Saving ' + recs.length + ' images.';
+    $('pm-name').value = last ? last.name : '';
+    $('pm-name').placeholder = Presets.nextPlaylistName();
+    $('pm-new').hidden = !last;
+    $('pm-error').hidden = true;
+    syncPlaylistTarget();
+    $('playlist-modal').hidden = false;
+    $('pm-name').focus();
+    $('pm-name').select();
+  }
+
+  function playlistName() {
+    return ($('pm-name').value.trim() || $('pm-name').placeholder).slice(0, 40);
+  }
+
+  function syncPlaylistTarget() {
+    const p = Presets.findPlaylist(playlistName());
+    const n = p ? (p.filters.ids || []).length : 0;
+    $('pm-target').textContent = p
+      ? 'Adds to “' + p.name + '”, which has ' + n + ' image' + (n === 1 ? '' : 's') + '.'
+      : 'Makes a new playlist called “' + playlistName() + '”.';
+  }
+
+  function closePlaylistModal() {
+    $('playlist-modal').hidden = true;
+    pmRecs = [];
+    pmDone = null;
+  }
+
+  function savePlaylistModal() {
+    const result = Presets.saveToPlaylist(playlistName(), pmRecs.map(function (r) { return r.id; }));
+    if (!result) {
+      $('pm-error').textContent = 'Could not save. Browser storage is full or blocked in this window.';
+      $('pm-error').hidden = false;
+      return;
+    }
+    const done = pmDone;
+    closePlaylistModal();
+    playlistChanged(result.entry.id);
+    if (done) done(result.entry.name, result.added);
+  }
+
+  /* A playlist's contents changed: redraw the cards, and if that playlist is
+     what is showing, show its new contents rather than the old list. */
+  function playlistChanged(id) {
+    const wasActive = activePreset === id;
+    buildCollections();
+    const p = wasActive && Presets.byId(id);
+    if (p) Filters.set(Presets.filtersFor(p));      // recompute re-highlights it
+    else syncActivePreset();
+    Gallery.refreshPicks();
   }
 
   /* Applying a collection is absolute, not a patch: a collection that does not
@@ -646,31 +710,31 @@
     loadConfig();
     Filters.init();
     Filters.onChange(recompute);
-    Gallery.initLightbox();
+    Gallery.initLightbox({
+      save: openPlaylistModal,
+      // Only while browsing a playlist that has this image in it.
+      removeLabel: function (rec) {
+        const p = activePreset && Presets.byId(activePreset);
+        if (!p || !p.playlist || (p.filters.ids || []).indexOf(rec.id) === -1) return null;
+        return 'Remove from “' + p.name + '”';
+      },
+      remove: function (rec) {
+        const id = activePreset;
+        if (Presets.removeFromPlaylist(id, rec.id)) playlistChanged(id);
+      }
+    });
 
     Session.init(
       function onExit() { /* player closed; nothing else to do */ },
       function onAgain() { Session.stop(); startSession(); },
-      function onSettings() { setView('practice'); location.hash = '#/practice'; }
+      function onSettings() { setView('practice'); location.hash = '#/practice'; },
+      openPlaylistModal
     );
 
     buildIntervalChips();
     buildPresets();
     buildCollections();
     Presets.validate();
-    // Picking an image (gallery lightbox, end-of-session summary) changes the
-    // playlist card's count, or makes it appear in the first place. While the
-    // playlist is what is being shown, keep showing it as it changes, rather
-    // than leaving the old list up with nothing highlighted.
-    let lastPlaylist = JSON.stringify(Presets.playlist.ids());
-    Presets.playlist.onChange(function (ids) {
-      const f = Filters.get();
-      const showing = f.ids.length > 0 && JSON.stringify(f.ids) === lastPlaylist;
-      lastPlaylist = JSON.stringify(ids);
-      buildCollections();
-      if (showing) { f.ids = ids.slice(); Filters.set(f); }
-      else syncActivePreset();
-    });
 
     document.querySelectorAll('#mode-tabs button').forEach(function (b) {
       b.addEventListener('click', function () { config.mode = b.dataset.mode; syncSetup(); });
@@ -742,6 +806,24 @@
     $('cm-save').addEventListener('click', saveModal);
     $('cm-cancel').addEventListener('click', closeModal);
     $('cm-delete').addEventListener('click', deleteFromModal);
+
+    $('pm-save').addEventListener('click', savePlaylistModal);
+    $('pm-cancel').addEventListener('click', closePlaylistModal);
+    $('pm-name').addEventListener('input', syncPlaylistTarget);
+    $('pm-new').addEventListener('click', function () {
+      $('pm-name').value = '';
+      syncPlaylistTarget();
+      $('pm-name').focus();
+    });
+    $('playlist-modal').addEventListener('click', function (e) {
+      if (e.target.id === 'playlist-modal') closePlaylistModal();
+    });
+    $('playlist-modal').addEventListener('keydown', function (e) {
+      // Nothing underneath (the player, the lightbox) should react to typing.
+      e.stopPropagation();
+      if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); savePlaylistModal(); }
+      if (e.key === 'Escape') closePlaylistModal();
+    });
     $('collection-modal').addEventListener('click', function (e) {
       if (e.target.id === 'collection-modal') closeModal();
     });
@@ -765,7 +847,7 @@
     // Global shortcuts that only apply outside the player
     document.addEventListener('keydown', function (e) {
       if (!$('player').hidden || Gallery.isLightboxOpen()) return;
-      if (!$('collection-modal').hidden) return;
+      if (document.querySelector('.modal:not([hidden])')) return;
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
       if (e.key === '/') { e.preventDefault(); $('filter-search').focus(); }
       if (e.key === 'Enter' && view === 'practice') startSession();

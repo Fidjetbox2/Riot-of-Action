@@ -74,17 +74,23 @@ They live in `localStorage` under `riotofaction.collections.v1`, so they are
 per-browser and never leave the machine. Clearing site data clears them; there
 is no export yet.
 
-### Your playlist
+### Playlists
 
-For specific images rather than a filter. Add one with **+ Add to playlist**
-in the gallery's full-size view (or <kbd>P</kbd>), or by clicking its thumbnail
-on the end-of-session summary. Picked images get a teal tick in the gallery.
+For specific images rather than a filter. **Save to playlist** is in the
+gallery's full-size view (or <kbd>P</kbd>) and on the end-of-session summary,
+where you can click thumbnails to pick which ones to save, or save everything
+you drew.
 
-Once it has anything in it, the playlist appears as a collection card, so it
-works with every timer mode, the gallery and **Practice these** like any other
-collection. The × on the card clears it. Saving your current filters while the
-playlist is selected keeps a copy as its own collection, which is how you get
-more than one playlist.
+It asks for a name, offering the playlist you saved to last, so adding images
+one at a time is just <kbd>Enter</kbd>. Leave the name empty and it gets the
+next free "Playlist 1", "Playlist 2" and so on. Type a new name to start
+another playlist.
+
+Each playlist shows up as a collection card, so it works with every timer mode,
+the gallery and **Practice these**. Its pencil button renames or deletes it.
+While a playlist is selected, the gallery's full-size view also offers
+**Remove from** it. Images that are in any playlist get a teal tick in the
+gallery.
 
 ### Practice
 

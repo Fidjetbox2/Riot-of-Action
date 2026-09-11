@@ -191,6 +191,8 @@ const Presets = (function () {
       blurb: (rec.blurb || '').slice(0, 90),
       framing: rec.framing,
       filters: rec.filters,
+      playlist: !!rec.playlist,
+      updated: Date.now(),
       custom: true
     };
     list.push(entry);
@@ -205,6 +207,7 @@ const Presets = (function () {
       if (patch.blurb !== undefined) list[i].blurb = patch.blurb.slice(0, 90);
       if (patch.filters !== undefined) list[i].filters = patch.filters;
       if (patch.framing !== undefined) list[i].framing = patch.framing;
+      list[i].updated = Date.now();
       return writeCustom(list) ? list[i] : null;
     }
     return null;
@@ -223,60 +226,70 @@ const Presets = (function () {
     return null;
   }
 
-  /* ── Your playlist ───────────────────────────────────────────────────
+  /* ── Playlists ───────────────────────────────────────────────────────
      Specific images picked by hand, from the gallery or the end of a
-     session. Stored as ids and shown as one more collection, so it goes
-     through the same timer, Start button and gallery as everything else.
+     session. A playlist is a saved collection whose filter is a list of
+     image ids, so it gets the same card, timer, gallery, rename and delete
+     as everything else.
      ─────────────────────────────────────────────────────────────────── */
 
-  const PLAYLIST_KEY = 'riotofaction.playlist.v1';
-  const listeners = [];
+  function playlists() {
+    return readCustom().filter(function (c) { return c.playlist; });
+  }
 
-  function readPlaylist() {
-    try {
-      const raw = JSON.parse(localStorage.getItem(PLAYLIST_KEY) || '[]');
-      return Array.isArray(raw) ? raw.filter(function (id) { return typeof id === 'string'; }) : [];
-    } catch (e) {
-      return [];
+  function idsOf(p) { return (p.filters && p.filters.ids) || []; }
+
+  function findPlaylist(name) {
+    const key = name.trim().toLowerCase();
+    return playlists().filter(function (c) { return c.name.toLowerCase() === key; })[0] || null;
+  }
+
+  /* The one saved to most recently, which the save dialog offers first. */
+  function lastPlaylist() {
+    return playlists().sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); })[0] || null;
+  }
+
+  /* The name used when someone saves without typing one. */
+  function nextPlaylistName() {
+    let n = 1;
+    while (findPlaylist('Playlist ' + n)) n++;
+    return 'Playlist ' + n;
+  }
+
+  /* Adds the images to the playlist with that name, making it if need be.
+     Returns { entry, added }, or null when storage is full or blocked. */
+  function saveToPlaylist(name, ids) {
+    const existing = findPlaylist(name);
+    if (!existing) {
+      const made = addCustom({
+        name: name, blurb: 'Hand-picked images.',
+        filters: { ids: ids.slice() }, playlist: true
+      });
+      return made && { entry: made, added: ids.length };
     }
+    const have = idsOf(existing);
+    const fresh = ids.filter(function (id) { return have.indexOf(id) === -1; });
+    const entry = updateCustom(existing.id, { filters: { ids: have.concat(fresh) } });
+    return entry && { entry: entry, added: fresh.length };
   }
 
-  function writePlaylist(ids) {
-    try { localStorage.setItem(PLAYLIST_KEY, JSON.stringify(ids)); }
-    catch (e) { return; }
-    listeners.forEach(function (fn) { fn(ids); });
+  function removeFromPlaylist(playlistId, id) {
+    const p = byId(playlistId);
+    if (!p || !p.playlist) return null;
+    return updateCustom(playlistId, {
+      filters: { ids: idsOf(p).filter(function (x) { return x !== id; }) }
+    });
   }
 
-  const playlist = {
-    ids: readPlaylist,
-    has: function (id) { return readPlaylist().indexOf(id) !== -1; },
-    /* Returns whether the image is in the playlist afterwards. */
-    toggle: function (id) {
-      const ids = readPlaylist();
-      const i = ids.indexOf(id);
-      if (i === -1) ids.push(id); else ids.splice(i, 1);
-      writePlaylist(ids);
-      return i === -1;
-    },
-    clear: function () { writePlaylist([]); },
-    onChange: function (fn) { listeners.push(fn); }
-  };
-
-  /* Only shown once there is something in it. */
-  function playlistCard() {
-    const ids = readPlaylist();
-    if (!ids.length) return [];
-    return [{
-      id: 'playlist',
-      name: 'Your playlist',
-      blurb: 'Images you picked, from the gallery or after a session.',
-      filters: { ids: ids },
-      playlist: true
-    }];
+  /* Every image in any playlist, for the ticks in the gallery. */
+  function playlistIds() {
+    const ids = new Set();
+    playlists().forEach(function (p) { idsOf(p).forEach(function (id) { ids.add(id); }); });
+    return ids;
   }
 
-  /* Built-ins first, then the playlist, then saved ones. */
-  function all() { return LIST.concat(playlistCard(), readCustom()); }
+  /* Built-ins first, saved ones after. */
+  function all() { return LIST.concat(readCustom()); }
 
   /* Resolve line-name patterns against the current dataset. */
   function resolveLines(patterns) {
@@ -342,6 +355,20 @@ const Presets = (function () {
     return bad;
   }
 
+  /* The first version had one unnamed playlist under its own key. Carry it
+     over as a named one so nobody loses their picks. */
+  (function migrateSinglePlaylist() {
+    const OLD_KEY = 'riotofaction.playlist.v1';
+    try {
+      const old = JSON.parse(localStorage.getItem(OLD_KEY) || 'null');
+      if (Array.isArray(old)) {
+        const ids = old.filter(function (id) { return typeof id === 'string'; });
+        if (ids.length) saveToPlaylist('Your playlist', ids);
+        localStorage.removeItem(OLD_KEY);
+      }
+    } catch (e) { /* storage blocked: nothing to carry over */ }
+  }());
+
   return {
     list: LIST,
     all: all,
@@ -349,7 +376,13 @@ const Presets = (function () {
     addCustom: addCustom,
     updateCustom: updateCustom,
     removeCustom: removeCustom,
-    playlist: playlist,
+    playlists: playlists,
+    findPlaylist: findPlaylist,
+    lastPlaylist: lastPlaylist,
+    nextPlaylistName: nextPlaylistName,
+    saveToPlaylist: saveToPlaylist,
+    removeFromPlaylist: removeFromPlaylist,
+    playlistIds: playlistIds,
     filtersFor: filtersFor,
     countFor: countFor,
     thumbFor: thumbFor,

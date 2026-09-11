@@ -514,23 +514,56 @@ const Session = (function () {
     });
   }
 
-  /* Each thumbnail is a toggle for the playlist. */
-  function summaryThumb(rec, picked) {
+  /* Clicking a thumbnail picks it for Save to playlist. Nothing is saved
+     until that button is pressed. */
+  let picks = new Set();
+  let summaryDrawn = [];
+  let summaryAll = [];
+  let onSave = null;
+
+  function summaryThumb(rec) {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'sum-thumb' + (picked ? ' picked' : '');
+    b.className = 'sum-thumb';
     b.dataset.id = rec.id;
     b.title = rec.name + ', ' + rec.champ;
-    b.setAttribute('aria-pressed', picked ? 'true' : 'false');
+    b.setAttribute('aria-pressed', 'false');
     const im = document.createElement('img');
     im.alt = rec.name;
     SP.loadInto(im, rec, 'tile');
     b.appendChild(im);
-    b.addEventListener('click', function () { syncThumbs(rec.id, Presets.playlist.toggle(rec.id)); });
+    b.addEventListener('click', function () {
+      const on = !picks.has(rec.id);
+      if (on) picks.add(rec.id); else picks.delete(rec.id);
+      syncThumbs(rec.id, on);
+      syncSaveButton();
+    });
     return b;
   }
 
-  function summaryGroup(label, recs, dim, picked) {
+  function syncSaveButton() {
+    document.getElementById('btn-save-playlist').textContent = picks.size
+      ? 'Save ' + picks.size + ' to playlist'
+      : 'Save drawn to playlist';
+  }
+
+  /* Saves the picked images, or everything drawn when none are picked. */
+  function saveFromSummary() {
+    if (!onSave) return;
+    const recs = picks.size
+      ? summaryAll.filter(function (r) { return picks.has(r.id); })
+      : summaryDrawn;
+    onSave(recs, function (name, added) {
+      picks.forEach(function (id) { syncThumbs(id, false); });
+      picks = new Set();
+      syncSaveButton();
+      document.getElementById('summary-hint').textContent = added
+        ? 'Added ' + added + ' image' + (added === 1 ? '' : 's') + ' to “' + name + '”.'
+        : 'Those are all in “' + name + '” already.';
+    });
+  }
+
+  function summaryGroup(label, recs, dim) {
     const wrap = document.createElement('section');
     wrap.className = 'summary-group';
     const h = document.createElement('span');
@@ -539,7 +572,7 @@ const Session = (function () {
     const strip = document.createElement('div');
     strip.className = 'summary-strip' + (dim ? ' is-rest' : '');
     recs.slice(0, SUMMARY_CAP).forEach(function (rec) {
-      strip.appendChild(summaryThumb(rec, picked.indexOf(rec.id) !== -1));
+      strip.appendChild(summaryThumb(rec));
     });
     if (recs.length > SUMMARY_CAP) {
       const more = document.createElement('span');
@@ -561,7 +594,6 @@ const Session = (function () {
 
     const done = playlist.slice(0, reached + 1);
     const rest = playlist.slice(reached + 1);
-    const picked = Presets.playlist.ids();
 
     document.getElementById('summary-title').textContent =
       rest.length ? 'Ended early' : 'Session complete';
@@ -572,11 +604,18 @@ const Session = (function () {
     const groups = document.getElementById('summary-groups');
     groups.innerHTML = '';
     const doneUnique = uniqueById(done);
-    groups.appendChild(summaryGroup('Drawn', doneUnique, false, picked));
+    groups.appendChild(summaryGroup('Drawn', doneUnique, false));
     const seen = {};
     doneUnique.forEach(function (r) { seen[r.id] = 1; });
     const restUnique = uniqueById(rest, seen);
-    if (restUnique.length) groups.appendChild(summaryGroup('Not reached', restUnique, true, picked));
+    if (restUnique.length) groups.appendChild(summaryGroup('Not reached', restUnique, true));
+
+    summaryDrawn = doneUnique;
+    summaryAll = doneUnique.concat(restUnique);
+    picks = new Set();
+    syncSaveButton();
+    document.getElementById('summary-hint').textContent =
+      'Click images to pick which ones to save, or save everything you drew.';
 
     const resumeBtn = document.getElementById('btn-resume');
     resumeBtn.hidden = !rest.length;
@@ -650,7 +689,8 @@ const Session = (function () {
 
   /* ── Wiring ──────────────────────────────────────────────────────── */
 
-  function init(onExit, onAgain, onSettings) {
+  function init(onExit, onAgain, onSettings, saveHook) {
+    onSave = saveHook;
     document.getElementById('btn-next').addEventListener('click', next);
     document.getElementById('btn-prev').addEventListener('click', prev);
     document.getElementById('btn-pause').addEventListener('click', togglePause);
@@ -661,6 +701,7 @@ const Session = (function () {
     document.getElementById('btn-back-setup').addEventListener('click', function () { stop(); onSettings(); });
     document.getElementById('btn-end').addEventListener('click', endEarly);
     document.getElementById('btn-resume').addEventListener('click', resume);
+    document.getElementById('btn-save-playlist').addEventListener('click', saveFromSummary);
 
     document.querySelectorAll('.tool[data-toggle]').forEach(function (b) {
       b.addEventListener('click', function () { toggleFlag(b.dataset.toggle); });
@@ -700,6 +741,7 @@ const Session = (function () {
 
     document.addEventListener('keydown', function (e) {
       if (player.hidden) return;
+      if (document.querySelector('.modal:not([hidden])')) return;   // a dialog has the keys
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
 
       const summaryOpen = !document.getElementById('summary').hidden;

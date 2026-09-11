@@ -15,6 +15,8 @@ const Gallery = (function () {
   let observer = null;
   let lbIndex = -1;
   let lbRec = null;           // the open image, which survives a re-render
+  let hooks = {};             // save / remove, supplied by app.js
+  let savedTimer = null;
 
   const gridEl = function () { return document.getElementById('gallery-grid'); };
   const endEl = function () { return document.getElementById('gallery-end'); };
@@ -73,7 +75,7 @@ const Gallery = (function () {
     const grid = gridEl();
     const frag = document.createDocumentFragment();
     const stop = Math.min(shown + PAGE, list.length);
-    const picked = new Set(Presets.playlist.ids());
+    const picked = Presets.playlistIds();
     for (let i = shown; i < stop; i++) frag.appendChild(makeTile(list[i], i, picked.has(list[i].id)));
     grid.appendChild(frag);
     shown = stop;
@@ -178,27 +180,38 @@ const Gallery = (function () {
     cap.querySelector('.who').textContent = rec.champ + ', ' + rec.title;
     cap.querySelector('.meta').textContent = ' · ' + bits.join(' · ');
 
+    clearTimeout(savedTimer);
+    document.getElementById('lb-pick').textContent = 'Save to playlist';
     syncPick();
     box.hidden = false;
   }
 
-  /* Uses the record, not list[lbIndex]: picking re-renders the gallery when
-     the playlist is what is showing, and the index then points elsewhere. */
+  /* "Remove from" only shows while a playlist is what is being browsed.
+     Uses the record, not list[lbIndex]: changing that playlist re-renders
+     the gallery, and the index then points elsewhere. */
   function syncPick() {
     if (!lbRec) return;
-    const on = Presets.playlist.has(lbRec.id);
-    const btn = document.getElementById('lb-pick');
-    btn.classList.toggle('picked', on);
-    btn.textContent = on ? '✓ In your playlist' : '+ Add to playlist';
-    btn.title = (on ? 'Remove from' : 'Add to') + ' your playlist (P)';
+    const rm = document.getElementById('lb-remove');
+    const label = hooks.removeLabel ? hooks.removeLabel(lbRec) : null;
+    rm.hidden = !label;
+    if (label) rm.textContent = label;
   }
 
-  function togglePick() {
-    if (!lbRec) return;
-    const id = lbRec.id;
-    const on = Presets.playlist.toggle(id);
-    document.querySelectorAll('#gallery-grid .tile[data-id="' + id + '"]').forEach(function (t) {
-      t.classList.toggle('picked', on);
+  function savePick() {
+    if (!lbRec || !hooks.save) return;
+    const btn = document.getElementById('lb-pick');
+    hooks.save([lbRec], function (name) {
+      btn.textContent = '✓ Saved to “' + name + '”';
+      clearTimeout(savedTimer);
+      savedTimer = setTimeout(function () { btn.textContent = 'Save to playlist'; }, 1800);
+    });
+  }
+
+  /* After any playlist changes: ticks on the tiles, and the lightbox. */
+  function refreshPicks() {
+    const saved = Presets.playlistIds();
+    document.querySelectorAll('#gallery-grid .tile').forEach(function (t) {
+      t.classList.toggle('picked', saved.has(t.dataset.id));
     });
     syncPick();
   }
@@ -217,7 +230,8 @@ const Gallery = (function () {
     openLightbox(next);
   }
 
-  function initLightbox() {
+  function initLightbox(h) {
+    hooks = h || {};
     document.getElementById('lb-close').addEventListener('click', closeLightbox);
     document.getElementById('lb-prev').addEventListener('click', function (e) {
       e.stopPropagation(); step(-1);
@@ -225,22 +239,27 @@ const Gallery = (function () {
     document.getElementById('lb-next').addEventListener('click', function (e) {
       e.stopPropagation(); step(1);
     });
-    document.getElementById('lb-pick').addEventListener('click', togglePick);
+    document.getElementById('lb-pick').addEventListener('click', savePick);
+    document.getElementById('lb-remove').addEventListener('click', function () {
+      if (lbRec && hooks.remove) hooks.remove(lbRec);
+    });
     document.getElementById('lightbox').addEventListener('click', function (e) {
       if (e.target.id === 'lightbox') closeLightbox();
     });
     document.addEventListener('keydown', function (e) {
       if (lbIndex === -1) return;
+      if (document.querySelector('.modal:not([hidden])')) return;   // a dialog has the keys
       if (e.key === 'Escape') closeLightbox();
       else if (e.key === 'ArrowLeft') step(-1);
       else if (e.key === 'ArrowRight') step(1);
-      else if (e.key === 'p' || e.key === 'P') togglePick();
+      else if (e.key === 'p' || e.key === 'P') savePick();
     });
   }
 
   return {
     render: render,
     initLightbox: initLightbox,
+    refreshPicks: refreshPicks,
     isLightboxOpen: function () { return lbIndex !== -1; },
     current: function () { return list; }
   };
