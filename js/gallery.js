@@ -17,6 +17,9 @@ const Gallery = (function () {
   let lbRec = null;           // the open image, which survives a re-render
   let hooks = {};             // save / remove, supplied by app.js
   let savedTimer = null;
+  let selecting = false;      // Select to playlist is on
+  const selected = new Map(); // id -> record; survives re-renders and filter changes
+  let selectTimer = null;
 
   const gridEl = function () { return document.getElementById('gallery-grid'); };
   const endEl = function () { return document.getElementById('gallery-end'); };
@@ -54,7 +57,13 @@ const Gallery = (function () {
     cap.appendChild(b);
     fig.appendChild(cap);
 
-    function open() { openLightbox(index); }
+    if (selected.has(rec.id)) fig.classList.add('selected');
+
+    // Opens the image, unless Select to playlist is on.
+    function open() {
+      if (selecting) toggleSelected(rec, fig);
+      else openLightbox(index);
+    }
     fig.addEventListener('click', open);
     fig.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
@@ -130,7 +139,8 @@ const Gallery = (function () {
 
     const grid = gridEl();
     grid.innerHTML = '';
-    grid.className = 'grid' + (size && size !== 'md' ? ' ' + size : '');
+    grid.className = 'grid' + (size && size !== 'md' ? ' ' + size : '') +
+      (selecting ? ' selecting' : '');
 
     document.getElementById('gallery-count').textContent =
       list.length.toLocaleString() + (list.length === 1 ? ' illustration' : ' illustrations');
@@ -148,6 +158,49 @@ const Gallery = (function () {
     appendPage();
     fillScreen();
     setupObserver();
+  }
+
+  /* ── Select to playlist ──────────────────────────────────────────── */
+
+  /* Clicking a tile normally opens it. Select mode switches that to
+     ticking tiles instead, then saves them all to a playlist in one go. */
+  function setSelecting(on) {
+    selecting = on;
+    selected.clear();
+    const grid = gridEl();
+    grid.classList.toggle('selecting', on);
+    grid.querySelectorAll('.tile.selected').forEach(function (t) { t.classList.remove('selected'); });
+    const btn = document.getElementById('btn-select');
+    clearTimeout(selectTimer);
+    btn.textContent = 'Select to playlist';
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    document.getElementById('select-bar').hidden = !on;
+    syncSelectBar();
+  }
+
+  function toggleSelected(rec, fig) {
+    const on = !selected.has(rec.id);
+    if (on) selected.set(rec.id, rec); else selected.delete(rec.id);
+    fig.classList.toggle('selected', on);
+    syncSelectBar();
+  }
+
+  function syncSelectBar() {
+    const n = selected.size;
+    document.getElementById('select-count').textContent =
+      n ? n + ' selected' : 'Click images to select them';
+    document.getElementById('select-save').disabled = !n;
+  }
+
+  function saveSelected() {
+    if (!selected.size || !hooks.save) return;
+    hooks.save(Array.from(selected.values()), function (name) {
+      setSelecting(false);
+      const btn = document.getElementById('btn-select');
+      btn.textContent = '✓ Saved to “' + name + '”';
+      selectTimer = setTimeout(function () { btn.textContent = 'Select to playlist'; }, 2000);
+    });
   }
 
   /* ── Lightbox ────────────────────────────────────────────────────── */
@@ -243,12 +296,22 @@ const Gallery = (function () {
     document.getElementById('lb-remove').addEventListener('click', function () {
       if (lbRec && hooks.remove) hooks.remove(lbRec);
     });
+    document.getElementById('btn-select').addEventListener('click', function () {
+      setSelecting(!selecting);
+    });
+    document.getElementById('select-save').addEventListener('click', saveSelected);
+    document.getElementById('select-cancel').addEventListener('click', function () {
+      setSelecting(false);
+    });
     document.getElementById('lightbox').addEventListener('click', function (e) {
       if (e.target.id === 'lightbox') closeLightbox();
     });
     document.addEventListener('keydown', function (e) {
-      if (lbIndex === -1) return;
       if (document.querySelector('.modal:not([hidden])')) return;   // a dialog has the keys
+      if (lbIndex === -1) {
+        if (selecting && e.key === 'Escape') setSelecting(false);
+        return;
+      }
       if (e.key === 'Escape') closeLightbox();
       else if (e.key === 'ArrowLeft') step(-1);
       else if (e.key === 'ArrowRight') step(1);

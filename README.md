@@ -175,6 +175,10 @@ indirect one. It is named for what it does rather than what it approximates.
 Click anything for a full-size view with its metadata. **Practice these**
 starts a session from exactly what you are looking at.
 
+**Select to playlist** changes what a click does: instead of opening an image
+it ticks it, so you can pick several and save them to a playlist in one go.
+Cancel or <kbd>Esc</kbd> goes back to normal clicking.
+
 ---
 
 ## Running it locally

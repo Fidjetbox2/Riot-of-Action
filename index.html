@@ -310,11 +310,17 @@
               <option value="portrait">Tall</option>
             </select>
           </label>
+          <button class="btn" id="btn-select" aria-pressed="false" title="Pick several images, then save them to a playlist">Select to playlist</button>
           <button class="btn primary" id="btn-practice-these">Practice these</button>
         </div>
       </div>
       <div class="grid" id="gallery-grid"></div>
       <div class="grid-end" id="gallery-end"></div>
+      <div class="select-bar" id="select-bar" hidden>
+        <span id="select-count"></span>
+        <button class="btn primary sm" id="select-save" disabled>Save to playlist</button>
+        <button class="btn ghost sm" id="select-cancel">Cancel</button>
+      </div>
     </section>
 
   </main>

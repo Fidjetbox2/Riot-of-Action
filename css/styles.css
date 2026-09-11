@@ -805,6 +805,31 @@ select:disabled { cursor: not-allowed; }
 /* The tier badge already has a tile's top-right corner. */
 .tile.picked { border-color: var(--teal); }
 .tile.picked::after { top: 6px; right: auto; left: 6px; }
+
+/* Select to playlist: every tile gets a check circle, and clicking ticks it
+   instead of opening it. Gold, so it never reads as the teal "already in a
+   playlist" tick, which moves aside to make room. */
+.grid.selecting .tile::before {
+  content: ""; position: absolute; top: 6px; left: 6px; z-index: 2;
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.85); background: rgba(6,8,11,.45);
+  font: 700 12px/16px var(--font); text-align: center; color: #17120a;
+}
+.grid.selecting .tile.selected { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+.grid.selecting .tile.selected::before { content: "✓"; background: var(--gold); border-color: var(--gold); }
+.grid.selecting .tile.picked::after { left: 32px; top: 8px; }
+
+/* Stays pinned to the bottom of the gallery while you scroll. */
+.select-bar {
+  position: sticky; bottom: 16px; z-index: 5;
+  display: flex; align-items: center; gap: 10px;
+  width: max-content; max-width: 100%; margin: 0 auto;
+  padding: 8px 8px 8px 16px;
+  background: rgba(19,26,35,.96); border: 1px solid var(--gold-dim);
+  border-radius: 999px; box-shadow: var(--shadow);
+}
+.select-bar span { font-size: 13px; color: var(--ink-2); }
+#btn-select.on { border-color: var(--gold); color: var(--gold); background: rgba(200,170,110,.12); }
 .summary-more { align-self: center; padding-left: 6px; font-size: 12px; color: var(--ink-3); }
 .summary-hint { margin: 16px 0 16px; font-size: 12.5px; color: var(--ink-3); }
 .summary-actions { display: flex; flex-wrap: wrap; gap: 8px; }
