@@ -543,6 +543,7 @@ select:disabled { cursor: not-allowed; }
 
 .tile {
   position: relative; display: block; width: 100%; padding: 0;
+  margin: 0;   /* <figure> ships with 40px side margins that pushed the grid off the page */
   border: 1px solid var(--line-soft); border-radius: var(--radius-sm);
   background: var(--panel); overflow: hidden; cursor: pointer;
   aspect-ratio: var(--tile-ratio, 16 / 9);
